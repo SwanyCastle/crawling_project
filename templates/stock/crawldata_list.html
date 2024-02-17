@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block content %}
+{% comment %} 이미지 업로드에 필요 {% endcomment %}
+{% load static %}
+{% comment %} 가격에 ',' 구분자 넣어주기위해 필요 {% endcomment %}
+{% load humanize%}
+{% if crawled_datas %}
+  <div class="container mt-3">
+    <div class="position-relative border-bottom">
+      <label class="mt-5 mb-3" style="font-size: 50px">
+        <img src="{% static 'image/stock.gif' %}" alt="stock" style="width: 50px; height: 50px"/>
+        공모주 청약 일정
+      </label>
+      <div class="position-absolute top-0 start-0">
+        <label style="font-size: 20px">
+          <img src="{% static 'image/clock.png' %}" alt="clock" style="width: 30px; height: 30px"/>
+          {{ date_time }} 
+        </label>
+      </div>
+      <div class="btn-group mb-3 position-absolute top-0 end-0" role="group" aria-label="Basic radio toggle button group">
+        <input type="radio" class="btn-check" name="btnradio" id="btnradio_ligth" autocomplete="off" checked />
+        <label class="btn btn-sm btn-outline-primary rounded-start-pill" for="btnradio_ligth">
+          <img src="{% static 'image/sun1.png' %}" alt="lightmode" style="width: 30px; height: 30px"/>
+        </label>
+        <input type="radio" class="btn-check" name="btnradio" id="btnradio_dark" autocomplete="off" />
+        <label class="btn btn-sm btn-outline-primary rounded-end-pill" for="btnradio_dark" >
+          <img src="{% static 'image/moon1.png' %}" alt="darkmode" style="width: 30px; height: 30px"/>
+        </label>
+      </div>
+      <div class="d-flex position-absolute bottom-0 end-0 mb-3" >
+        <!-- style="width: 100px margin-right: 12px" -->
+        <div class="border border-success rounded-start p-2 text-success-emphasis">마지막 업데이트</div>
+        <div class="border border-success rounded-end p-2 text-success-emphasis" id="update_div"></div>
+      </div>
+    </div>
+    <div class="container mt-3">
+      <div class="row align-items-center border-bottom">
+        <form class="row align-items-center" style="width: 1000px" id="filter_form" method="post", action="{% url 'stock:list_data' %}">
+          {% csrf_token %}
+          <div class="input-group mb-3" style="width: 125px">
+            <button class="btn btn-success" type="button" id="btn_reset">필터 초기화</button>
+          </div>
+          <div class="input-group mb-3" style="width: 350px">
+            <label class="input-group-text">주간사</label>
+            <select class="form-select" name="trading_firm_select" id="trading_firm_select">
+              <option value="" {% if not firm_select %}selected{% endif %}>전체</option>
+              {% for data in firm_data%}
+                <option value="{{ data.firm_name }}" {% if firm_select == data.firm_name %}selected{% endif %}>
+                  {{ data.firm_name }}
+                </option>
+              {% endfor%}
+            </select>
+          </div>
+          <div class="input-group mb-3" style="width: 500px">
+            <span class="input-group-text">청약 일정</span>
+            <input type="date" name="s_date" id="s_date" aria-label="s_date" class="form-control" value="{{ start_date }}">
+            <input type="date" name="e_date" id="e_date" aria-label="e_date" class="form-control" value="{{ end_date }}">
+            <input class="btn btn-primary" style="width: 60px" type="submit" value="조회">
+          </div>
+        </form>
+        <form class="input-group mb-3 position-relative" style="width: 308px" method="post" action="{% url 'stock:load_data' %}">
+          {% csrf_token %}
+          <button class="btn btn-outline-warning rounded position-absolute top-50 end-0 translate-middle-y" style="width: 210px" type="button" id="btn_load">
+            <div class="row d-flex justify-content-center">
+              <div class="col-auto" style="display:none" id="spinner_div">
+                <span class="spinner-border spinner-border-sm" aria-hidden="true" id="spinner"></span>
+              </div>
+              <div class="col-auto" id="txt_div">
+                <span id="txt_crawl">최신 데이터 업데이트</span>
+              </div>
+            </div>
+          </button>
+        </form>
+      </div>
+      {% comment %} 에러 표시 {% endcomment %}
+      {% for message in messages %}
+          <div class="alert alert-danger {{ message.tags }} alert-auto-dismissible alert-dismissible notification-container" role="alert">
+              <strong>{{ message }}</strong>
+          </div>
+      {% endfor %}
+      {% comment %} 데이터베이스에서 가져온 데이터 표시 {% endcomment %}
+      <form class="mt-3" method="post" action="{% url 'stock:delete_data' %}">
+        {% csrf_token %}
+        <table class="table table-sm" id="stocks_table">
+          <thead>
+            <tr>
+              <th scope="col">
+                <input class="form-check-input" type="checkbox" name="chk_rows[]" id="all-checkbox"/>
+              </th>
+              <th scope="col">종목명</th>
+              <th scope="col">청약 일정</th>
+              <th scope="col">확정 공모가</th>
+              <th scope="col">희망 공모가</th>
+              <th scope="col">주간사</th>
+            </tr>
+          </thead>
+          <tbody class="table-group-divider" id="data-table">
+              {% for data in crawled_datas %}
+                {% if data.close_date|date:'Y-m-d' >= date_time|date:'Y-m-d' %}
+                  <tr>
+                    <td>
+                      <input class="form-check-input chk" type="checkbox" name="chk_rows[]" value="{{ data.id }}"/>
+                    </td>
+                    <td>{{ data.stock_name }}</td>
+                    <td>{{ data.open_date|date:'Y-m-d' }} ~ {{ data.close_date|date:'Y-m-d' }}</td>
+                    <td>{{ data.fixed_price|intcomma }}</td>
+                    <td>{{ data.min_hprice|intcomma }} ~ {{ data.max_hprice|intcomma }}</td>
+                    <td>{{ data.trading_firm }}</td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td>
+                      <input class="form-check-input bg-secondary-subtle chk" type="checkbox" name="chk_rows[]" value="{{ data.id }}"/>
+                    </td>
+                    <td class="text-secondary bg-secondary-subtle">{{ data.stock_name }}</td>
+                    <td class="text-secondary bg-secondary-subtle">{{ data.open_date|date:'Y-m-d' }} ~ {{ data.close_date|date:'Y-m-d' }}</td>
+                    <td class="text-secondary bg-secondary-subtle">{{ data.fixed_price|intcomma }}</td>
+                    <td class="text-secondary bg-secondary-subtle">{{ data.min_hprice|intcomma }} ~ {{ data.max_hprice|intcomma }}</td>
+                    <td class="text-secondary bg-secondary-subtle">{{ data.trading_firm }}</td>
+                  </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+        </table>
+        <div class="row position-relative">
+          <div class="col-auto">
+            <button class="btn btn-sm btn-danger" type="submit" id="btn_del">삭제</button>
+          </div>
+          <div class="col-auto d-flex justify-content-between position-absolute end-0">
+            <a class="icon-link icon-link-hover link-underline link-underline-opacity-0 link-underline-opacity-75-hover" 
+              style="--bs-icon-link-transform: translate3d(0, -0.125rem, 0)"
+              href="https://github.com/SwanyCastle" target="_blank">
+              <img class="bi" aria-hidden="true" src="{% static 'image/github.svg' %}" style="width: 30px; height: 30px" />
+              SwanyCastle
+            </a>
+            {% comment %} 페이지네이션 {% endcomment %}
+            <nav aria-label="..." style="margin-left:10px">
+              <ul class="pagination pagination-sm mt-3">
+                {% comment %} 이전 페이지 {% endcomment %}
+                {% if crawled_datas.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ crawled_datas.previous_page_number }}">이전</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled">
+                    <a class="page-link" tabindex="-1" aria-disabled="true" href="#">이전</a>
+                  </li>
+                {% endif %}
+                {% comment %} 페이지 리스트 표시 {% endcomment %}
+                {% for page_number in crawled_datas.paginator.page_range %}
+                  {% if page_number == crawled_datas.number %}
+                    <li class="page-item active" aria-current="page">
+                      <a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
+                    </li>
+                  {% elif page_number > crawled_datas.number|add:'-5' and page_number < crawled_datas.number|add:'5' %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_number }}">{{ page_number }}</a>
+                    </li>
+                  {% elif page_number == crawled_datas.number|add:'-6' %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page=1">1</a>
+                    </li>
+                    <span class="page-link">...</span>
+                  {% elif page_number == crawled_datas.number|add:'6' %}
+                    <span class="page-link">...</span>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ end_page }}">{{ end_page }}</a>
+                    </li>
+                  {% endif %}              
+                {% endfor %}
+                {% comment %} 다음 페이지 {% endcomment %}
+                {% if crawled_datas.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ crawled_datas.next_page_number }}">다음</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled">
+                    <a class="page-link" tabindex="-1" aria-disabled="true" href="#">다음</a>
+                  </li>
+                {% endif %}
+                </ul>
+            </nav>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endif %}
+{% endblock content %}
