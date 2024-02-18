@@ -82,7 +82,7 @@ window.onload = function() {
     // 크롤링 잘 되었으면 true 반환 하게 했음 그래서 그 값을 json 형식으로 받아 콘솔에 출력, 전달 받은 값이 딱히 사용되는 곳은 없음
     $.ajax({
       url: "load_data",
-      type: "GET",
+      type: "POST",
       success: function(data) {
         let update_datetime = data.last_update['crawled_datetime'].replace('T', ' ');
         let split_datetime = update_datetime.split('.');

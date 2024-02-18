@@ -12,9 +12,9 @@ from .models import Data, FirmData
 
 def list_data(request):
     page = request.GET.get('page', '1')
-    firm_select = request.POST.get('trading_firm_select', '')
-    s_date = request.POST.get('s_date', '')
-    e_date = request.POST.get('e_date', '')
+    firm_select = request.GET.get('trading_firm_select', None)
+    s_date = request.GET.get('s_date', None)
+    e_date = request.GET.get('e_date', None)
     if not firm_select:
         crawled_datas = Data.objects.order_by('-close_date')       
     elif firm_select == 'KB증권': 

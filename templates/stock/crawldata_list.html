@@ -35,8 +35,7 @@
     </div>
     <div class="container mt-3">
       <div class="row align-items-center border-bottom">
-        <form class="row align-items-center" style="width: 1000px" id="filter_form" method="post", action="{% url 'stock:list_data' %}">
-          {% csrf_token %}
+        <form class="row align-items-center" style="width: 1000px" id="filter_form" method="get", action="{% url 'stock:list_data' %}">
           <div class="input-group mb-3" style="width: 125px">
             <button class="btn btn-success" type="button" id="btn_reset">필터 초기화</button>
           </div>
