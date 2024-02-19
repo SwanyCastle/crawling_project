@@ -15,6 +15,7 @@ def list_data(request):
     firm_select = request.GET.get('trading_firm_select', None)
     s_date = request.GET.get('s_date', None)
     e_date = request.GET.get('e_date', None)
+
     if not firm_select:
         crawled_datas = Data.objects.order_by('-close_date')       
     elif firm_select == 'KB증권': 
@@ -23,6 +24,10 @@ def list_data(request):
         crawled_datas = Data.objects.filter(Q(trading_firm__icontains=firm_select)|Q(trading_firm__icontains='아이비케이투자')).order_by('-close_date')
     else:
         crawled_datas = Data.objects.filter(trading_firm__icontains=firm_select).order_by('-close_date')
+
+    if s_date is None or e_date is None:
+        s_date = ""
+        e_date = ""
 
     if s_date or e_date:
         if not s_date:
