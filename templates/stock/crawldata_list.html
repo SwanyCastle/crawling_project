@@ -58,7 +58,6 @@
           </div>
         </form>
         <form class="input-group mb-3 position-relative" style="width: 308px" method="post" action="{% url 'stock:load_data' %}">
-          {% csrf_token %}
           <button class="btn btn-outline-warning rounded position-absolute top-50 end-0 translate-middle-y" style="width: 210px" type="button" id="btn_load">
             <div class="row d-flex justify-content-center">
               <div class="col-auto" style="display:none" id="spinner_div">
@@ -79,7 +78,6 @@
       {% endfor %}
       {% comment %} 데이터베이스에서 가져온 데이터 표시 {% endcomment %}
       <form class="mt-3" method="post" action="{% url 'stock:delete_data' %}">
-        {% csrf_token %}
         <table class="table table-sm" id="stocks_table">
           <thead>
             <tr>

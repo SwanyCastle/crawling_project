@@ -54,12 +54,16 @@ def list_data(request):
     }
     return render(request, "stock/crawldata_list.html", context)
 
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def load_data(request):
     crawling_data()
     update_datetime = Data.objects.aggregate(crawled_datetime=Max('crawled_datetime'))
     context = {'last_update': update_datetime}
     return JsonResponse(context)
 
+@csrf_exempt
 def delete_data(request):
     chk_rows = request.POST.getlist('chk_rows[]')
     for i in chk_rows:
