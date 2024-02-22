@@ -54,6 +54,7 @@ def list_data(request):
     }
     return render(request, "stock/crawldata_list.html", context)
 
+# csrf 
 from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
